@@ -41,32 +41,50 @@ function mat4x4Identity(mat4x4) {
 
 // set values of existing 4x4 matrix to the translate matrix
 function mat4x4Translate(mat4x4, tx, ty, tz) {
-    // mat4x4.values = ...;
+    mat4x4.values = [[1, 0, 0, tx],
+                     [0, 1, 0, ty],
+                     [0, 0, 1, tz],
+                     [0, 0, 0, 1]];
 }
 
 // set values of existing 4x4 matrix to the scale matrix
 function mat4x4Scale(mat4x4, sx, sy, sz) {
-    // mat4x4.values = ...;
+    mat4x4.values = [[sx, 0, 0, 0],
+                     [0, sy, 0, 0],
+                     [0, 0, sz, 0],
+                     [0, 0, 0, 1]];
 }
 
 // set values of existing 4x4 matrix to the rotate about x-axis matrix
 function mat4x4RotateX(mat4x4, theta) {
-    // mat4x4.values = ...;
+    mat4x4.values = [[1,        0,              0,          0],
+                     [0, Math.cos(theta), -Math.sin(theta), 0],
+                     [0, Math.sin(theta),  Math.cos(theta), 0],
+                     [0,        0,              0,          1]];
 }
 
 // set values of existing 4x4 matrix to the rotate about y-axis matrix
 function mat4x4RotateY(mat4x4, theta) {
-    // mat4x4.values = ...;
+    mat4x4.values = [[Math.cos(theta),  0, Math.sin(theta), 0],
+                     [      0,          1,       0,         1],
+                     [-Math.sin(theta), 0, Math.cos(theta), 0],
+                     [      0,          0,       0,         1]];
 }
 
 // set values of existing 4x4 matrix to the rotate about z-axis matrix
 function mat4x4RotateZ(mat4x4, theta) {
-    // mat4x4.values = ...;
+    mat4x4.values = [[Math.cos(theta), -Math.sin(theta), 0, 0],
+                     [Math.sin(theta),  Math.cos(theta), 0, 0],
+                     [      0,                  0,       1, 0],
+                     [      0,                  0,       0, 1]];
 }
 
 // set values of existing 4x4 matrix to the shear parallel to the xy-plane matrix
 function mat4x4ShearXY(mat4x4, shx, shy) {
-    // mat4x4.values = ...;
+    mat4x4.values = [[1, 0, shx, 0],
+                     [0, 1, shy, 0],
+                     [0, 0,  1,  0],
+                     [0, 0,  0,  1]];
 }
 
 // create a new 3-component vector with values x,y,z
