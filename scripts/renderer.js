@@ -64,7 +64,11 @@ class Renderer {
 
         // TODO: implement drawing here!
         // For each model
-        //   * For each vertex
+        for (let i = 0; i < this.scene.models.length; i++) {
+            //   * For each vertex
+            
+        }
+        
         //     * transform endpoints to canonical view volume
         //   * For each line segment in each edge
         //     * clip in 3D
