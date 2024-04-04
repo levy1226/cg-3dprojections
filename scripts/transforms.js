@@ -25,7 +25,10 @@ function mat4x4MPer() {
 // create a 4x4 matrix to translate/scale projected vertices to the viewport (window)
 function mat4x4Viewport(width, height) {
     let viewport = new Matrix(4, 4);
-    // viewport.values = ...;
+    viewport.values = [[width/2, 0, 0, width/2],
+                       [0, height/2, 0, height/2],
+                       [0, 0, 1, 0],
+                       [0, 0, 0, 1]];
     return viewport;
 }
 
