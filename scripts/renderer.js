@@ -64,9 +64,12 @@ class Renderer {
 
         // TODO: implement drawing here!
         // For each model
-        for (let i = 0; i < this.scene.models.length; i++) {
+        let models = this.scene.models;
+        for (let i = 0; i < models.length; i++) {
             //   * For each vertex
-            
+            for (let j = 0; j < models.length; i++) {
+                
+            }
         }
         
         //     * transform endpoints to canonical view volume
