@@ -2,58 +2,46 @@ import { Matrix, Vector } from "./matrix.js";
 
 // create a 4x4 matrix to the perspective projection / view matrix
 function mat4x4Perspective(prp, srp, vup, clip) {
+    let matrix = new Matrix(4,4);
     // 1. translate PRP to origin
+    mat4x4Translate(m, -prp.x, -prp.y, -prp.z);
+
     // 2. rotate VRC such that (u,v,n) align with (x,y,z)
-    // 3. shear such that CW is on the z-axis
-    // 4. scale such that view volume bounds are ([z,-z], [z,-z], [-1,zmin])
-
-    
-    let translatePRP = new Matrix(4, 4);
-    translatePRP.values = [[1, 0, 0, -(prp.x)],
-                           [0, 1, 0, -(prp.y)],
-                           [0, 0, 1, -(prp.z)],
-                           [0, 0, 0, 1]];
-
-                  
-    let n = prp.subtract(srp);
+    let n = prp.subtract(srp); //from SRP to PRP
     n.normalize();
-    let u = vup.cross(n); 
+
+    let u = vup.cross(n); //right
     u.normalize();
-    let v = n.cross(u);
 
-    let CW = new Vector(3);
-    CW.x = (clip[0] + clip[1]) / 2;
-    CW.y = (clip[0] + clip[3]) / 2;
-    CW.z = -clip[4];
+    let v = n.cross(u); //up
 
-    let DOP = new Vector(3);
-    DOP = CW;
+    // 3. shear such that CW is on the z-axis
+    let r = new Matrix(4,4);
+    r.values = [[u.x, u.y, u.z, 0],
+                [v.x, v.y, v.z, 0],
+                [n.x, n.y, n.z, 0],
+                [0,   0,   0,   0]];
 
-    let rotateVRC = new Matrix(4, 4);
-    rotateVRC.values = [[u.x, u.y, u.z, 0],
-                        [v.x, v.y, v.z, 0],
-                        [n.x, n.y, n.z, 0],
-                        [0, 0, 0, 1]];
+    let directionOfProjection = [(clip[0] + clip[1]/2, (clip[2] + clip[3]/2), -clip[4])];
+
+    let shearXParallel = -directionOfProjection[0] / directionOfProjection[2];
+    let shearYParallel = -directionOfProjection[1] / directionOfProjection[2];
+    let shPar = newMatrix(4,4);
+
+    mat4x4ShearXY(shPar, shearXParallel, shearYParallel);
+
+    // 4. scale such that view volume bounds are ([z,-z], [z,-z], [-1,zmin])
     
-    let shearCW = new Matrix(4, 4);
-    mat4x4ShearXY(shearCW, -DOP.x/DOP.z, -DOP.y/DOP.z);
+    //L, R, B, T, F, N
+    let PerspectiveScaleX = (2* clip[5]) / ((clip[1] - clip[0])*clip[4]);
+    let PerspectiveScaleY = (2* clip[5]) / ((clip[3] - clip[2])*clip[4]);
+    let PerspectiveScaleZ = 1 / clip[4];
+    let PerspectiveScale = new Matrix(4, 4);
+    mat4x4Scale(PerspectiveScale, PerspectiveScaleX, PerspectiveScaleY, PerspectiveScaleZ);
 
-    let scalePer = new Matrix(4, 4);
-    let scaleX = (2 * clip[4])/((clip[1] - clip[0]) * clip[5]);
-    let scaleY = (2 * clip[4])/((clip[3] - clip[2]) * clip[5]);
-    let scaleZ = 1 / clip[5];
-    scalePer.values = [[scaleX, 0, 0, 0],
-                   [0, scaleY, 0, 0],
-                   [0, 0, scaleZ, 0],
-                   [0, 0, 0, 1]];
-
-    let nPer = Matrix.multiply([scalePer, shearCW, rotateVRC, translatePRP]);
-    let mPer = new Matrix(4, 4);
-    mPer.values = [[1, 0, 0, 0],
-                   [0, 1, 0, 0],
-                   [0, 0, 1, 0],
-                   [0, 0, -1, 0]];
-    return Matrix.multiply([mPer, nPer]);
+    let nPer = Matrix.multiply([sPer, shPar, r, t]);
+    // return transform;
+    return nPer;
 }
 
 // create a 4x4 matrix to project a perspective image on the z=-1 plane
