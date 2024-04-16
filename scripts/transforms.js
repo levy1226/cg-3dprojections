@@ -2,9 +2,12 @@ import { Matrix, Vector } from "./matrix.js";
 
 // create a 4x4 matrix to the perspective projection / view matrix
 function mat4x4Perspective(prp, srp, vup, clip) {
-    let matrix = new Matrix(4,4);
     // 1. translate PRP to origin
-    mat4x4Translate(m, -prp.x, -prp.y, -prp.z);
+    let t = new Matrix(4, 4);
+    t.values = [[1, 0, 0, -(prp.x)],
+                [0, 1, 0, -(prp.y)],
+                [0, 0, 1, -(prp.z)],
+                [0, 0, 0, 1]];
 
     // 2. rotate VRC such that (u,v,n) align with (x,y,z)
     let n = prp.subtract(srp); //from SRP to PRP
@@ -20,28 +23,35 @@ function mat4x4Perspective(prp, srp, vup, clip) {
     r.values = [[u.x, u.y, u.z, 0],
                 [v.x, v.y, v.z, 0],
                 [n.x, n.y, n.z, 0],
-                [0,   0,   0,   0]];
+                [0,   0,   0,   1]];
 
-    let directionOfProjection = [(clip[0] + clip[1]/2, (clip[2] + clip[3]/2), -clip[4])];
+    let directionOfProjection = new Vector(3);
+    directionOfProjection = [(clip[0] + clip[1])/2, (clip[2] + clip[3]/2), -clip[4]];
 
     let shearXParallel = -directionOfProjection[0] / directionOfProjection[2];
     let shearYParallel = -directionOfProjection[1] / directionOfProjection[2];
-    let shPar = newMatrix(4,4);
+    let shPar = new Matrix(4,4);
 
     mat4x4ShearXY(shPar, shearXParallel, shearYParallel);
 
     // 4. scale such that view volume bounds are ([z,-z], [z,-z], [-1,zmin])
     
-    //L, R, B, T, F, N
-    let PerspectiveScaleX = (2* clip[5]) / ((clip[1] - clip[0])*clip[4]);
-    let PerspectiveScaleY = (2* clip[5]) / ((clip[3] - clip[2])*clip[4]);
-    let PerspectiveScaleZ = 1 / clip[4];
+    //L, R, B, T, F, N 
     let PerspectiveScale = new Matrix(4, 4);
+    let PerspectiveScaleX = (2 * clip[4]) / ((clip[1] - clip[0]) * clip[4]);
+    let PerspectiveScaleY = (2 * clip[4]) / ((clip[3] - clip[2]) * clip[4]);
+    let PerspectiveScaleZ = 1 / clip[5];
+
     mat4x4Scale(PerspectiveScale, PerspectiveScaleX, PerspectiveScaleY, PerspectiveScaleZ);
 
-    let nPer = Matrix.multiply([sPer, shPar, r, t]);
+    let nPer = Matrix.multiply([PerspectiveScale, shPar, r, t]);
+    let mPer = new Matrix(4, 4);
+    mPer.values = [[1, 0, 0, 0],
+                   [0, 1, 0, 0],
+                   [0, 0, 1, 0],
+                   [0, 0, -1, 0]];
     // return transform;
-    return nPer;
+    return Matrix.multiply([mPer, nPer]);
 }
 
 // create a 4x4 matrix to project a perspective image on the z=-1 plane
