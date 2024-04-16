@@ -66,19 +66,41 @@ class Renderer {
         // For each model
         let models = this.scene.models;
         for (let i = 0; i < models.length; i++) {
+            let model = models[i];
+            let newVertexList = [];
             //   * For each vertex
-            for (let j = 0; j < models.length; i++) {
-                
-            }
-        }
-        
+            for (let j = 0; j < model.vertices.length; i++) {
+                let vertex = model.vertices[i];
+
         //     * transform endpoints to canonical view volume
+                let perspectiveVertex = Matrix.multiply([CG.mat4x4Perspective(), vertex]);
+                let per = Matrix.multiply([CG.mat4x4MPer(), perspectiveVertex]);
+                newVertexList.push(per);
+            }
         //   * For each line segment in each edge
+            for (let k = 0; k < model.edges.length; k++) {
+                let edges = model.edges[k];
+
+                for (let l = 0; l < edges.length; l++) {
+
         //     * clip in 3D
+                    let v1 = this.clipLinePerspective(edges[l], this.scene.srp.z_min);
+                    let v2 = this.clipLinePerspective(edges[l+1], this.scene.srp.z_min);
+                    
+                    v1 = newVertexList[edges[l]];
+                    v2 = newVertexList[edges[l+1]];
         //     * project to 2D
+                    let viewportVertex1 = Matrix.multiply([CG.mat4x4Viewport(), v1]);
+                    let viewportVertex2 = Matrix.multiply([CG.mat4x4Viewport(), v2]);
         //     * translate/scale to viewport (i.e. window)
         //     * draw line
+                    this.drawLine(viewportVertex1.x / viewportVertex1.w, viewportVertex1.y / viewportVertex1.w, viewportVertex2.x / viewportVertex2.w, viewportVertex2.y / viewportVertex2.w);
+                }
+            }
+
+        }
     }
+
 
     // Get outcode for a vertex
     // vertex:       Vector4 (transformed vertex in homogeneous coordinates)
