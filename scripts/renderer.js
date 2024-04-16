@@ -21,20 +21,37 @@ class Renderer {
         this.enable_animation = false;  // <-- disabled for easier debugging; enable for animation
         this.start_time = null;
         this.prev_time = null;
+        this.keyStroke = {};
     }
 
-    //PRP: camera
-    //SRP: Center of scene (direction of camera)
-    //VUP: "up" in camera's direction
-    //Zmin = -near / far
-
+    //
     updateTransforms(time, delta_time) {
         // TODO: update any transformations needed for animation
+        if (this.keyStroke['w']) {
+            this.moveForward();
+        }
+        if (this.keyStroke['a']) {
+            this.moveLeft();
+        }
+        if (this.keyStroke['s']) {
+            this.moveBackward();
+        }
+        if (this.keyStroke['d']) {
+            this.moveRight();
+        }
+        /** 
+        if (this.keyStroke['ArrowLeft']) {
+            this.rotateLeft();
+        }
+        if (this.keyStroke['ArrowRight']) {
+            this.rotateRight();
+        }
+        */
     }
 
     //
     rotateLeft() {
-
+        
     }
     
     //
@@ -44,67 +61,73 @@ class Renderer {
     
     //
     moveLeft() {
-
+        const translationAmount = 1;
+        this.scene.view.prp.x -= translationAmount;
+        this.scene.view.srp.x -= translationAmount;
+        this.draw();
     }
     
     //
     moveRight() {
-
+        const translationAmount = 1;
+        this.scene.view.prp.x += translationAmount;
+        this.scene.view.srp.x += translationAmount;
+        this.draw();
     }
     
     //
     moveBackward() {
-
+        const translationAmount = 1;
+        this.scene.view.prp.z += translationAmount;
+        this.scene.view.srp.z += translationAmount;
+        this.draw();
     }
     
     //
     moveForward() {
-
+        const translationAmount = 1;
+        this.scene.view.prp.z -= translationAmount;
+        this.scene.view.srp.z -= translationAmount;
+        this.draw();
     }
 
     //
     draw() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);    
+        let perspectiveMatrix = CG.mat4x4Perspective(this.scene.view.prp, this.scene.view.srp, this.scene.view.vup, this.scene.view.clip);
+        let viewportMatrix = CG.mat4x4Viewport(this.canvas.width, this.canvas.height);
+        let mPerMatrix = CG.mat4x4MPer();
 
-        // For each model
-        let models = this.scene.models;
-        for (let i = 0; i < models.length; i++) {
-            let model = models[i];
-            let newVertexList = [];
-            //   * For each vertex
-            for (let j = 0; j < model.vertices.length; i++) {
-                let vertex = model.vertices[i];
-
-        //     * transform endpoints to canonical view volume
-                let perspectiveVertex = Matrix.multiply([CG.mat4x4Perspective(), vertex]);
-                let per = Matrix.multiply([CG.mat4x4MPer(), perspectiveVertex]);
-                newVertexList.push(per);
+        for (let i = 0; i < this.scene.models.length; i++) {
+            let model = this.scene.models[i];
+            let newVertices = [];
+            for (let j = 0; j < model.vertices.length; j++) {
+                let vertices = model.vertices[j];
+                let perspectiveVertices = Matrix.multiply([perspectiveMatrix, vertices]);
+                let mPerVertices = Matrix.multiply([mPerMatrix, perspectiveVertices]);
+                newVertices.push(mPerVertices);
             }
-        //   * For each line segment in each edge
-            for (let k = 0; k < newVertexList.length; k++) {
-                let edges = newVertexList;
-
-                for (let l = 0; l < edges.length; l++) {
-
-            //     * clip in 3D
-                    let v1 = this.clipLinePerspective(edges[l], this.scene.prp.z);
-                    if (v1 != null) {
-                        newVertexList.push(v1);
-                    }
+            for (let k = 0; k < model.edges.length; k++) {
+                let edges = model.edges[k];
+                for (let l = 0; l < edges.length - 1; l++) {
+                    let vertex1 = newVertices[edges[l]];
+                    let vertex2 = newVertices[edges[l + 1]];
+                    let viewPortVertex1 = Matrix.multiply([viewportMatrix, vertex1]);
+                    let viewPortVertex2 = Matrix.multiply([viewportMatrix, vertex2]);
                     
-
-            //     * project to 2D
-                    
-
-            //     * translate/scale to viewport (i.e. window)
-                    let viewportVertex = Matrix.multiply([CG.mat4x4Viewport(), v1]);
-            
-            //     * draw line
-                    this.drawLine(viewportVertex1.x / viewportVertex1.w, viewportVertex1.y / viewportVertex1.w, viewportVertex2.x / viewportVertex2.w, viewportVertex2.y / viewportVertex2.w);
+                    this.drawLine(viewPortVertex1.x / viewPortVertex1.w, viewPortVertex1.y / viewPortVertex1.w, viewPortVertex2.x / viewPortVertex2.w, viewPortVertex2.y / viewPortVertex2.w);
                 }
             }
-
         }
+
+        // TODO: implement drawing here!
+        // For each model
+        //     * transform endpoints to canonical view volume
+        //   * For each line segment in each edge
+        //     * clip in 3D
+        //     * project to 2D
+        //     * translate/scale to viewport (i.e. window)
+        //     * draw line
     }
 
 
@@ -145,9 +168,7 @@ class Renderer {
         let out0 = this.outcodePerspective(p0, z_min);
         let out1 = this.outcodePerspective(p1, z_min);
         
-        //L, R, B, T, F, N   5
         // TODO: implement clipping here!
-        if (out0)
         
         return result;
     }
