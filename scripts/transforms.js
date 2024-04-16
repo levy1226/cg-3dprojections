@@ -7,12 +7,13 @@ function mat4x4Perspective(prp, srp, vup, clip) {
     mat4x4Translate(m, -prp.x, -prp.y, -prp.z);
 
     // 2. rotate VRC such that (u,v,n) align with (x,y,z)
-    let n = prp.subtract(srp);
+    let n = prp.subtract(srp); //from SRP to PRP
     n.normalize();
 
-    let u = vup.cross(normalized);
+    let u = vup.cross(n); //right
     u.normalize();
-    let v = n.cross(up);
+
+    let v = n.cross(u); //up
 
     // 3. shear such that CW is on the z-axis
     let r = new Matrix(4,4);
@@ -21,20 +22,22 @@ function mat4x4Perspective(prp, srp, vup, clip) {
                 [n.x, n.y, n.z, 0],
                 [0,   0,   0,   0]];
 
-    let dop = [(clip[0] + clip[1]/2, (clip[2] + clip[3]/2, -clip[4]))];
+    let directionOfProjection = [(clip[0] + clip[1]/2, (clip[2] + clip[3]/2), -clip[4])];
 
-    let shxPar = -dop[0] / dop[2];
-    let shyPar = -dop[1] / dop[2];
+    let shearXParallel = -directionOfProjection[0] / directionOfProjection[2];
+    let shearYParallel = -directionOfProjection[1] / directionOfProjection[2];
     let shPar = newMatrix(4,4);
 
-    mat4x4ShearXY(shPar, shxPar, shyPar);
+    mat4x4ShearXY(shPar, shearXParallel, shearYParallel);
 
     // 4. scale such that view volume bounds are ([z,-z], [z,-z], [-1,zmin])
-    let sPerX = (2* clip[4]) / ((clip[1] - clip[0])*clip[5]);
-    let sPerY = (2* clip[4]) / ((clip[3] - clip[2])*clip[5]);
-    let sPerZ = 1 / clip[5];
-    let sPer = new Matrix(4, 4);
-    mat4x4Scale(sPer, sPerX, sPerY, sPerZ);
+    
+    //L, R, B, T, F, N
+    let PerspectiveScaleX = (2* clip[5]) / ((clip[1] - clip[0])*clip[4]);
+    let PerspectiveScaleY = (2* clip[5]) / ((clip[3] - clip[2])*clip[4]);
+    let PerspectiveScaleZ = 1 / clip[4];
+    let PerspectiveScale = new Matrix(4, 4);
+    mat4x4Scale(PerspectiveScale, PerspectiveScaleX, PerspectiveScaleY, PerspectiveScaleZ);
 
     let nPer = Matrix.multiply([sPer, shPar, r, t]);
     // return transform;

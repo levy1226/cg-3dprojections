@@ -23,7 +23,11 @@ class Renderer {
         this.prev_time = null;
     }
 
-    //
+    //PRP: camera
+    //SRP: Center of scene (direction of camera)
+    //VUP: "up" in camera's direction
+    //Zmin = -near / far
+
     updateTransforms(time, delta_time) {
         // TODO: update any transformations needed for animation
     }
@@ -62,7 +66,6 @@ class Renderer {
     draw() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // TODO: implement drawing here!
         // For each model
         let models = this.scene.models;
         for (let i = 0; i < models.length; i++) {
@@ -78,22 +81,25 @@ class Renderer {
                 newVertexList.push(per);
             }
         //   * For each line segment in each edge
-            for (let k = 0; k < model.edges.length; k++) {
-                let edges = model.edges[k];
+            for (let k = 0; k < newVertexList.length; k++) {
+                let edges = newVertexList;
 
                 for (let l = 0; l < edges.length; l++) {
 
-        //     * clip in 3D
-                    let v1 = this.clipLinePerspective(edges[l], this.scene.srp.z_min);
-                    let v2 = this.clipLinePerspective(edges[l+1], this.scene.srp.z_min);
+            //     * clip in 3D
+                    let v1 = this.clipLinePerspective(edges[l], this.scene.prp.z);
+                    if (v1 != null) {
+                        newVertexList.push(v1);
+                    }
                     
-                    v1 = newVertexList[edges[l]];
-                    v2 = newVertexList[edges[l+1]];
-        //     * project to 2D
-                    let viewportVertex1 = Matrix.multiply([CG.mat4x4Viewport(), v1]);
-                    let viewportVertex2 = Matrix.multiply([CG.mat4x4Viewport(), v2]);
-        //     * translate/scale to viewport (i.e. window)
-        //     * draw line
+
+            //     * project to 2D
+                    
+
+            //     * translate/scale to viewport (i.e. window)
+                    let viewportVertex = Matrix.multiply([CG.mat4x4Viewport(), v1]);
+            
+            //     * draw line
                     this.drawLine(viewportVertex1.x / viewportVertex1.w, viewportVertex1.y / viewportVertex1.w, viewportVertex2.x / viewportVertex2.w, viewportVertex2.y / viewportVertex2.w);
                 }
             }
@@ -139,7 +145,9 @@ class Renderer {
         let out0 = this.outcodePerspective(p0, z_min);
         let out1 = this.outcodePerspective(p1, z_min);
         
+        //L, R, B, T, F, N   5
         // TODO: implement clipping here!
+        if (out0)
         
         return result;
     }
@@ -207,7 +215,7 @@ class Renderer {
                 }
             }
             else {
-                model.center = Vector4(scene.models[i].center[0],
+                model.center = CG.Vector4(scene.models[i].center[0],
                                        scene.models[i].center[1],
                                        scene.models[i].center[2],
                                        1);
