@@ -2,14 +2,43 @@ import { Matrix, Vector } from "./matrix.js";
 
 // create a 4x4 matrix to the perspective projection / view matrix
 function mat4x4Perspective(prp, srp, vup, clip) {
+    let matrix = new Matrix(4,4);
     // 1. translate PRP to origin
-    // 2. rotate VRC such that (u,v,n) align with (x,y,z)
-    // 3. shear such that CW is on the z-axis
-    // 4. scale such that view volume bounds are ([z,-z], [z,-z], [-1,zmin])
+    mat4x4Translate(m, -prp.x, -prp.y, -prp.z);
 
-    // ...
-    // let transform = Matrix.multiply([...]);
+    // 2. rotate VRC such that (u,v,n) align with (x,y,z)
+    let n = prp.subtract(srp);
+    n.normalize();
+
+    let u = vup.cross(normalized);
+    u.normalize();
+    let v = n.cross(up);
+
+    // 3. shear such that CW is on the z-axis
+    let r = new Matrix(4,4);
+    r.values = [[u.x, u.y, u.z, 0],
+                [v.x, v.y, v.z, 0],
+                [n.x, n.y, n.z, 0],
+                [0,   0,   0,   0]];
+
+    let dop = [(clip[0] + clip[1]/2, (clip[2] + clip[3]/2, -clip[4]))];
+
+    let shxPar = -dop[0] / dop[2];
+    let shyPar = -dop[1] / dop[2];
+    let shPar = newMatrix(4,4);
+
+    mat4x4ShearXY(shPar, shxPar, shyPar);
+
+    // 4. scale such that view volume bounds are ([z,-z], [z,-z], [-1,zmin])
+    let sPerX = (2* clip[4]) / ((clip[1] - clip[0])*clip[5]);
+    let sPerY = (2* clip[4]) / ((clip[3] - clip[2])*clip[5]);
+    let sPerZ = 1 / clip[5];
+    let sPer = new Matrix(4, 4);
+    mat4x4Scale(sPer, sPerX, sPerY, sPerZ);
+
+    let nPer = Matrix.multiply([sPer, shPar, r, t]);
     // return transform;
+    return nPer;
 }
 
 // create a 4x4 matrix to project a perspective image on the z=-1 plane
