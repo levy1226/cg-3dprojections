@@ -21,16 +21,37 @@ class Renderer {
         this.enable_animation = false;  // <-- disabled for easier debugging; enable for animation
         this.start_time = null;
         this.prev_time = null;
+        this.keyStroke = {};
     }
 
     //
     updateTransforms(time, delta_time) {
         // TODO: update any transformations needed for animation
+        if (this.keyStroke['w']) {
+            this.moveForward();
+        }
+        if (this.keyStroke['a']) {
+            this.moveLeft();
+        }
+        if (this.keyStroke['s']) {
+            this.moveBackward();
+        }
+        if (this.keyStroke['d']) {
+            this.moveRight();
+        }
+        /** 
+        if (this.keyStroke['ArrowLeft']) {
+            this.rotateLeft();
+        }
+        if (this.keyStroke['ArrowRight']) {
+            this.rotateRight();
+        }
+        */
     }
 
     //
     rotateLeft() {
-
+        
     }
     
     //
@@ -40,38 +61,67 @@ class Renderer {
     
     //
     moveLeft() {
-
+        const translationAmount = 1;
+        this.scene.view.prp.x -= translationAmount;
+        this.scene.view.srp.x -= translationAmount;
+        this.draw();
     }
     
     //
     moveRight() {
-
+        const translationAmount = 1;
+        this.scene.view.prp.x += translationAmount;
+        this.scene.view.srp.x += translationAmount;
+        this.draw();
     }
     
     //
     moveBackward() {
-
+        const translationAmount = 1;
+        this.scene.view.prp.z += translationAmount;
+        this.scene.view.srp.z += translationAmount;
+        this.draw();
     }
     
     //
     moveForward() {
-
+        const translationAmount = 1;
+        this.scene.view.prp.z -= translationAmount;
+        this.scene.view.srp.z -= translationAmount;
+        this.draw();
     }
 
     //
     draw() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);    
+        let perspectiveMatrix = CG.mat4x4Perspective(this.scene.view.prp, this.scene.view.srp, this.scene.view.vup, this.scene.view.clip);
+        let viewportMatrix = CG.mat4x4Viewport(this.canvas.width, this.canvas.height);
+        let mPerMatrix = CG.mat4x4MPer();
+
+        for (let i = 0; i < this.scene.models.length; i++) {
+            let model = this.scene.models[i];
+            let newVertices = [];
+            for (let j = 0; j < model.vertices.length; j++) {
+                let vertices = model.vertices[j];
+                let perspectiveVertices = Matrix.multiply([perspectiveMatrix, vertices]);
+                let mPerVertices = Matrix.multiply([mPerMatrix, perspectiveVertices]);
+                newVertices.push(mPerVertices);
+            }
+            for (let k = 0; k < model.edges.length; k++) {
+                let edges = model.edges[k];
+                for (let l = 0; l < edges.length - 1; l++) {
+                    let vertex1 = newVertices[edges[l]];
+                    let vertex2 = newVertices[edges[l + 1]];
+                    let viewPortVertex1 = Matrix.multiply([viewportMatrix, vertex1]);
+                    let viewPortVertex2 = Matrix.multiply([viewportMatrix, vertex2]);
+                    
+                    this.drawLine(viewPortVertex1.x / viewPortVertex1.w, viewPortVertex1.y / viewPortVertex1.w, viewPortVertex2.x / viewPortVertex2.w, viewPortVertex2.y / viewPortVertex2.w);
+                }
+            }
+        }
 
         // TODO: implement drawing here!
         // For each model
-        let models = this.scene.models;
-        for (let i = 0; i < models.length; i++) {
-            //   * For each vertex
-            for (let j = 0; j < models.length; i++) {
-                
-            }
-        }
-        
         //     * transform endpoints to canonical view volume
         //   * For each line segment in each edge
         //     * clip in 3D
@@ -79,6 +129,7 @@ class Renderer {
         //     * translate/scale to viewport (i.e. window)
         //     * draw line
     }
+
 
     // Get outcode for a vertex
     // vertex:       Vector4 (transformed vertex in homogeneous coordinates)
@@ -185,7 +236,7 @@ class Renderer {
                 }
             }
             else {
-                model.center = Vector4(scene.models[i].center[0],
+                model.center = CG.Vector4(scene.models[i].center[0],
                                        scene.models[i].center[1],
                                        scene.models[i].center[2],
                                        1);
