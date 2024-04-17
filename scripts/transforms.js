@@ -36,10 +36,10 @@ function mat4x4Perspective(prp, srp, vup, clip) {
 
     // 4. scale such that view volume bounds are ([z,-z], [z,-z], [-1,zmin])
     
-    //L, R, B, T, F, N 
+    //L, R, B, T, N, F
     let PerspectiveScale = new Matrix(4, 4);
-    let PerspectiveScaleX = (2 * clip[4]) / ((clip[1] - clip[0]) * clip[4]);
-    let PerspectiveScaleY = (2 * clip[4]) / ((clip[3] - clip[2]) * clip[4]);
+    let PerspectiveScaleX = (2 * clip[4]) / ((clip[1] - clip[0]) * clip[5]);
+    let PerspectiveScaleY = (2 * clip[4]) / ((clip[3] - clip[2]) * clip[5]);
     let PerspectiveScaleZ = 1 / clip[5];
 
     mat4x4Scale(PerspectiveScale, PerspectiveScaleX, PerspectiveScaleY, PerspectiveScaleZ);
@@ -52,6 +52,7 @@ function mat4x4Perspective(prp, srp, vup, clip) {
                    [0, 0, -1, 0]];
     // return transform;
     return Matrix.multiply([mPer, nPer]);
+    
 }
 
 // create a 4x4 matrix to project a perspective image on the z=-1 plane

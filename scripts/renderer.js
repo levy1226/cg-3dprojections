@@ -39,24 +39,26 @@ class Renderer {
         if (this.keyStroke['d']) {
             this.moveRight();
         }
-        /** 
         if (this.keyStroke['ArrowLeft']) {
             this.rotateLeft();
         }
         if (this.keyStroke['ArrowRight']) {
             this.rotateRight();
         }
-        */
     }
 
     //
     rotateLeft() {
-        
+        const translationAmount = 1;
+        this.scene.view.prp.x -= translationAmount;
+        this.draw();
     }
     
     //
     rotateRight() {
-
+        const translationAmount = 1;
+        this.scene.view.prp.x += translationAmount;
+        this.draw();
     }
     
     //
