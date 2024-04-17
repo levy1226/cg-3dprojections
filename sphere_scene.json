@@ -1,0 +1,28 @@
+{
+    "view": {
+        "prp": [0, 0, 10],
+        "srp": [0, 0, 0],
+        "vup": [0, 1, 0],
+        "clip": [-4, 20, -1, 17, 5, 75]
+    },
+    "models": [
+        {
+            "type": "sphere",
+            "center": [24, 24, -10],
+            "radius": 4,
+            "slices": 8,
+            "stacks": 10
+        },
+        {
+            "type": "sphere",
+            "center": [20, 5, -12],
+            "radius": 5,
+            "slices": 10,
+            "stacks": 30,
+            "animation": {
+                "axis": "y",
+                "rps": 0.5
+            }
+        }
+    ]
+}

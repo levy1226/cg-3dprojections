@@ -49,28 +49,34 @@ class Renderer {
 
     //
     rotateLeft() {
-        const translationAmount = 1;
-        this.scene.view.prp.x -= translationAmount;
+        const angle = 0.5;
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        let srpToOrigin = this.scene.view.srp.subtract(this.scene.view.prp);
+        
+        let newSRP = new Vector(3);
+        newSRP.values = [srpToOrigin.x * cos - srpToOrigin.z * sin, srpToOrigin.y, srpToOrigin.x * sin + srpToOrigin.z * cos];
+        
+        this.scene.view.srp.values = [newSRP.x + this.scene.view.prp.x, newSRP.y + this.scene.view.prp.y, newSRP.z + this.scene.view.prp.z];
         this.draw();
     }
     
     //
     rotateRight() {
-        const translationAmount = 1;
-        this.scene.view.prp.x += translationAmount;
+        const angle = -0.5;
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        let srpToOrigin = this.scene.view.srp.subtract(this.scene.view.prp);
+        
+        let newSRP = new Vector(3);
+        newSRP.values = [srpToOrigin.x * cos - srpToOrigin.z * sin, srpToOrigin.y, srpToOrigin.x * sin + srpToOrigin.z * cos];
+        
+        this.scene.view.srp.values = [newSRP.x + this.scene.view.prp.x, newSRP.y + this.scene.view.prp.y, newSRP.z + this.scene.view.prp.z];
         this.draw();
     }
     
     //
     moveLeft() {
-        const translationAmount = 1;
-        this.scene.view.prp.x -= translationAmount;
-        this.scene.view.srp.x -= translationAmount;
-        this.draw();
-    }
-    
-    //
-    moveRight() {
         const translationAmount = 1;
         this.scene.view.prp.x += translationAmount;
         this.scene.view.srp.x += translationAmount;
@@ -78,18 +84,26 @@ class Renderer {
     }
     
     //
+    moveRight() {
+        const translationAmount = 1;
+        this.scene.view.prp.x -= translationAmount;
+        this.scene.view.srp.x -= translationAmount;
+        this.draw();
+    }
+    
+    //
     moveBackward() {
         const translationAmount = 1;
-        this.scene.view.prp.z += translationAmount;
-        this.scene.view.srp.z += translationAmount;
+        this.scene.view.prp.z -= translationAmount;
+        this.scene.view.srp.z -= translationAmount;
         this.draw();
     }
     
     //
     moveForward() {
         const translationAmount = 1;
-        this.scene.view.prp.z -= translationAmount;
-        this.scene.view.srp.z -= translationAmount;
+        this.scene.view.prp.z += translationAmount;
+        this.scene.view.srp.z += translationAmount;
         this.draw();
     }
 
@@ -236,7 +250,60 @@ class Renderer {
                         model.animation = JSON.parse(JSON.stringify(scene.models[i].animation));
                     }
                 }
+            } else if (model.type === 'cube') {
+                let newModel = scene.models[i];
+                model.vertices = [];
+                let newHeight = newModel.height / 2;
+                let newWidth = newModel.width / 2;
+                let newDepth = newModel.depth / 2;
+                const [centerX, centerY, centerZ] = newModel.center;
+                
+                for (let j = 1; j >= -1; j -= 2) {
+                    model.vertices.push(CG.Vector4(centerX - newWidth, centerY + newHeight, centerZ + j * newDepth, 1));
+                    model.vertices.push(CG.Vector4(centerX + newWidth, centerY + newHeight, centerZ + j * newDepth, 1));
+                    model.vertices.push(CG.Vector4(centerX + newWidth, centerY - newHeight, centerZ + j * newDepth, 1));
+                    model.vertices.push(CG.Vector4(centerX - newWidth, centerY - newHeight, centerZ + j * newDepth, 1));
+                }
+
+                model.edges = [];
+                model.edges.push([0, 1, 2, 3, 0]);
+                model.edges.push([4, 5, 6, 7, 4]);
+                model.edges.push([0, 4]);
+                model.edges.push([1, 5]);
+                model.edges.push([2, 6]);
+                model.edges.push([3, 7]);
+            } else if (model.type === "cylinder") {
+                let newModel = scene.models[i];
+                model.vertices = [];
+                model.edges = [];
+                let newHeight = newModel.height / 2;
+                let radius = newModel.radius;
+                let angle = (2 * Math.PI) / newModel.sides;
+
+                for (let j = 1; j > -2; j--) {
+                    for (let k = 0; k < newModel.sides; k++) {
+                        newHeight *= j;
+                        model.vertices.push(CG.Vector4(newModel.center[0] + radius * Math.cos(angle * k), newModel.center[1] + newHeight, newModel.center[2] + radius * Math.sin(angle * k), 1));
+                    }
+                }
+                let topVertices = [];
+                let bottomVertices = [];
+                for (let i = 0; i < newModel.sides*2; i++) {
+                    if (i > 11) {
+                        bottomVertices.push(i);
+                    } else {
+                        topVertices.push(i);
+                    }
+                }
+                bottomVertices.push(newModel.sides);
+                topVertices.push(0);
+                model.edges.push(topVertices);
+                model.edges.push(bottomVertices);
+                for (let i = 0; i < topVertices.length - 1; i++) {
+                    model.edges.push([topVertices[i], bottomVertices[i]]);
+                }
             }
+                
             else {
                 model.center = CG.Vector4(scene.models[i].center[0],
                                        scene.models[i].center[1],
