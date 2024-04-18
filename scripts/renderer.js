@@ -18,7 +18,7 @@ class Renderer {
         this.canvas.height = canvas.height;
         this.ctx = this.canvas.getContext('2d');
         this.scene = this.processScene(scene);
-        this.enable_animation = false;  // <-- disabled for easier debugging; enable for animation
+        this.enable_animation = true;  // <-- disabled for easier debugging; enable for animation
         this.start_time = null;
         this.prev_time = null;
         this.keyStroke = {};
@@ -77,33 +77,77 @@ class Renderer {
     
     //
     moveLeft() {
-        const translationAmount = 1;
-        this.scene.view.prp.x += translationAmount;
-        this.scene.view.srp.x += translationAmount;
+        let prp = this.scene.view.prp;
+        let srp = this.scene.view.srp;
+        let vup = this.scene.view.vup;
+        
+        let n = prp.subtract(srp);
+        n.normalize();
+
+        let u = vup.cross(n);
+        u.normalize();
+
+        this.scene.view.prp.x += u.x;
+        this.scene.view.srp.x += u.x;
+        this.scene.view.prp.y += u.y;
+        this.scene.view.srp.y += u.y;
+        this.scene.view.prp.z += u.z;
+        this.scene.view.srp.z += u.z;
         this.draw();
     }
     
     //
     moveRight() {
-        const translationAmount = 1;
-        this.scene.view.prp.x -= translationAmount;
-        this.scene.view.srp.x -= translationAmount;
+        let prp = this.scene.view.prp;
+        let srp = this.scene.view.srp;
+        let vup = this.scene.view.vup;
+        
+        let n = prp.subtract(srp);
+        n.normalize();
+
+        let u = vup.cross(n);
+        u.normalize();
+
+        this.scene.view.prp.x -= u.x;
+        this.scene.view.srp.x -= u.x;
+        this.scene.view.prp.y -= u.y;
+        this.scene.view.srp.y -= u.y;
+        this.scene.view.prp.z -= u.z;
+        this.scene.view.srp.z -= u.z;
         this.draw();
     }
     
     //
     moveBackward() {
-        const translationAmount = 1;
-        this.scene.view.prp.z -= translationAmount;
-        this.scene.view.srp.z -= translationAmount;
+        let prp = this.scene.view.prp;
+        let srp = this.scene.view.srp;
+        
+        let n = prp.subtract(srp);
+        n.normalize();
+
+        this.scene.view.prp.x -= n.x;
+        this.scene.view.srp.x -= n.x;
+        this.scene.view.prp.y -= n.y;
+        this.scene.view.srp.y -= n.y;
+        this.scene.view.prp.z -= n.z;
+        this.scene.view.srp.z -= n.z;
         this.draw();
     }
     
     //
     moveForward() {
-        const translationAmount = 1;
-        this.scene.view.prp.z += translationAmount;
-        this.scene.view.srp.z += translationAmount;
+        let prp = this.scene.view.prp;
+        let srp = this.scene.view.srp;
+        
+        let n = prp.subtract(srp);
+        n.normalize();
+
+        this.scene.view.prp.x += n.x;
+        this.scene.view.srp.x += n.x;
+        this.scene.view.prp.y += n.y;
+        this.scene.view.srp.y += n.y;
+        this.scene.view.prp.z += n.z;
+        this.scene.view.srp.z += n.z;
         this.draw();
     }
 
@@ -263,6 +307,9 @@ class Renderer {
                     model.vertices.push(CG.Vector4(centerX + newWidth, centerY + newHeight, centerZ + j * newDepth, 1));
                     model.vertices.push(CG.Vector4(centerX + newWidth, centerY - newHeight, centerZ + j * newDepth, 1));
                     model.vertices.push(CG.Vector4(centerX - newWidth, centerY - newHeight, centerZ + j * newDepth, 1));
+                    if (scene.models[i].hasOwnProperty('animation')) {
+                        model.animation = JSON.parse(JSON.stringify(scene.models[i].animation));
+                    }
                 }
 
                 model.edges = [];
@@ -284,6 +331,9 @@ class Renderer {
                     for (let k = 0; k < newModel.sides; k++) {
                         newHeight *= j;
                         model.vertices.push(CG.Vector4(newModel.center[0] + radius * Math.cos(angle * k), newModel.center[1] + newHeight, newModel.center[2] + radius * Math.sin(angle * k), 1));
+                        if (scene.models[i].hasOwnProperty('animation')) {
+                            model.animation = JSON.parse(JSON.stringify(scene.models[i].animation));
+                        }
                     }
                 }
                 let topVertices = [];
@@ -302,9 +352,45 @@ class Renderer {
                 for (let i = 0; i < topVertices.length - 1; i++) {
                     model.edges.push([topVertices[i], bottomVertices[i]]);
                 }
-            }
-                
-            else {
+            } else if (model.type === "sphere") {
+                let newModel = scene.models[i];
+                model.vertices = [];
+                model.edges = [];
+                let radius = newModel.radius;
+
+                for (let i = 0; i <= newModel.stacks; i++) {
+                    let angleH = Math.PI * i / newModel.stacks;
+                    let radiusH = radius * Math.sin(angleH);
+
+                    for (let j = 0; j <= newModel.slices; j++) {
+                        let angleV = 2 * Math.PI * j / newModel.slices;
+                        model.vertices.push(CG.Vector4(newModel.center[0] + radiusH * Math.cos(angleV), newModel.center[1] + radius * Math.cos(angleH), newModel.center[2] + radiusH * Math.sin(angleV), 1));
+                        if (i != newModel.stacks && j != newModel.slices) {
+                            model.edges.push([i * (newModel.slices + 1) + j, i * (newModel.slices + 1) + j + 1]);
+                            model.edges.push([i * (newModel.slices + 1) + j, i * (newModel.slices + 1) + j + newModel.slices + 1]);
+                        }
+                    }
+                }
+            } else if (model.type === "cone") {
+                let newModel = scene.models[i];
+                model.vertices = [];
+                model.edges = [];
+                let radius = newModel.radius;
+                let newHeight = newModel.height / 2;
+                let interval = (2 * Math.PI) / newModel.sides;
+
+                for (let i = 0; i < newModel.sides; i++) {
+                    model.vertices.push(CG.Vector4(newModel.center[0] + radius * Math.cos(interval * i), newModel.center[1], newModel.center[2] + radius * Math.sin(interval * i), 1));
+                    model.edges.push([i, newModel.sides]);
+                }
+                model.vertices.push(CG.Vector4(newModel.center[0], newModel.center[1] + newHeight, newModel.center[2], 1));
+
+                for (let i = 0; i < newModel.sides - 1; i++) {
+                    model.edges.push([i, i + 1]);
+                }
+                model.edges.push([newModel.sides - 1, 0]);
+                model.edges.push([newModel.sides, 1]);
+            } else {
                 model.center = CG.Vector4(scene.models[i].center[0],
                                        scene.models[i].center[1],
                                        scene.models[i].center[2],
@@ -334,9 +420,9 @@ class Renderer {
         this.ctx.lineTo(x1, y1);
         this.ctx.stroke();
 
-        this.ctx.fillStyle = '#FF0000';
-        this.ctx.fillRect(x0 - 2, y0 - 2, 4, 4);
-        this.ctx.fillRect(x1 - 2, y1 - 2, 4, 4);
+        this.ctx.fillStyle = '#000FFF';
+        this.ctx.fillRect(x0 - 2, y0 - 2, 5, 5);
+        this.ctx.fillRect(x1 - 2, y1 - 2, 5, 5);
     }
 };
 
